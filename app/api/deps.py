@@ -6,7 +6,7 @@ from functools import lru_cache
 from fastapi import Depends
 
 from app.core.config import Settings
-from app.core.llm import LLMService
+from app.core.llm.service import LLMService
 
 
 @lru_cache()

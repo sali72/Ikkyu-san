@@ -5,7 +5,7 @@ API routes for the chatbot application
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.core.llm import LLMService
+from app.core.llm.service import LLMService
 from app.core.config import Settings
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.api.deps import get_llm_service, get_settings

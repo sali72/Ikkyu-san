@@ -10,14 +10,23 @@ from pydantic import Field
 class Settings(BaseSettings):
     """Application settings managed through environment variables"""
 
-    # API credentials for OpenRouter
+    # LLM provider configuration
+    llm_provider: str = Field(
+        default="gemini", description="LLM provider to use (openrouter, gemini)"
+    )
+
+    # API credentials for different providers
     openrouter_api_key: str = Field(
         default="", description="API key for OpenRouter LLM service"
     )
+    gemini_api_key: str = Field(
+        default="", description="API key for Google AI Studio Gemini service"
+    )
+
 
     # LLM Configuration
     default_model: str = Field(
-        default="openai/gpt-3.5-turbo", description="Default LLM model to use"
+        default="gemini-2.0-flash", description="Default LLM model to use"
     )
     default_temperature: float = Field(
         default=0.7, description="Default temperature for LLM responses"
