@@ -2,6 +2,7 @@
 Configuration settings for the application
 """
 
+import os
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
@@ -9,6 +10,24 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     """Application settings managed through environment variables"""
+
+    def __init__(self, **kwargs):
+        """Initialize settings based on environment"""
+        # Set environment type from env var if not provided in kwargs
+        env = kwargs.get("environment", os.environ.get("APP_ENVIRONMENT", "dev"))
+        kwargs["environment"] = env
+
+        # Call parent class initializer with environment-specific settings
+        super().__init__(**kwargs)
+
+        # Apply environment-specific overrides
+        if env == "test":
+            self._apply_test_settings()
+        elif env == "prod":
+            self._apply_prod_settings()
+
+    # Environment type
+    environment: str = Field(default="dev", description="Environment (test, dev, prod)")
 
     # LLM provider configuration
     llm_provider: str = Field(
@@ -22,7 +41,6 @@ class Settings(BaseSettings):
     gemini_api_key: str = Field(
         default="", description="API key for Google AI Studio Gemini service"
     )
-
 
     # LLM Configuration
     default_model: str = Field(
@@ -47,3 +65,17 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         case_sensitive=False,
     )
+
+    def _apply_test_settings(self):
+        """Apply test environment specific settings"""
+        # These overrides will be applied only in test environment
+        # Override with test-specific settings
+        test_api_key = os.environ.get(
+            "TEST_GEMINI_API_KEY", "TEST_KEY_FOR_CI_ENVIRONMENT"
+        )
+        self.gemini_api_key = test_api_key
+
+    def _apply_prod_settings(self):
+        """Apply production environment specific settings"""
+        # Production-specific overrides
+        self.default_temperature = 0.5  # More deterministic in production
