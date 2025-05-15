@@ -35,6 +35,12 @@ class ChatRequest(BaseModel):
     system_prompt: Optional[str] = Field(
         None, description="System prompt to use for the conversation"
     )
+    conversation_id: Optional[str] = Field(
+        None, description="ID of the conversation to continue, or None for a new conversation"
+    )
+    user_id: str = Field(
+        ..., description="Unique identifier for the user"
+    )
 
 
 class ChatResponse(BaseModel):
@@ -44,3 +50,25 @@ class ChatResponse(BaseModel):
 
     message: Message = Field(..., description="The assistant's response message")
     usage: Optional[Dict[str, Any]] = Field(None, description="Token usage information")
+    conversation_id: str = Field(..., description="ID of the conversation")
+
+
+class ConversationInfo(BaseModel):
+    """
+    Basic information about a conversation
+    """
+    
+    conversation_id: str = Field(..., description="Unique identifier for the conversation")
+    title: Optional[str] = Field(None, description="Title of the conversation")
+    updated_at: str = Field(..., description="Last update timestamp as ISO format string")
+    model: Optional[str] = Field(None, description="LLM model used in the conversation")
+    message_count: int = Field(..., description="Number of messages in the conversation")
+
+
+class ConversationList(BaseModel):
+    """
+    List of conversations for a user
+    """
+    
+    conversations: List[ConversationInfo] = Field(..., description="List of conversation information")
+    total: int = Field(..., description="Total number of conversations for the user")

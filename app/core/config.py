@@ -56,6 +56,22 @@ class Settings(BaseSettings):
         default="You are a helpful AI assistant.",
         description="Default system prompt for the LLM",
     )
+    
+    # Conversation context configuration
+    context_window_size: int = Field(
+        default=10, 
+        description="Number of most recent messages to include in context window"
+    )
+    
+    # MongoDB configuration
+    mongodb_uri: str = Field(
+        default="mongodb://localhost:27017", 
+        description="MongoDB connection URI"
+    )
+    mongodb_db_name: str = Field(
+        default="ikkyu_san_chatbot", 
+        description="MongoDB database name"
+    )
 
     # API configuration
     api_prefix: str = Field(default="/api", description="API route prefix")
@@ -74,8 +90,12 @@ class Settings(BaseSettings):
             "TEST_GEMINI_API_KEY", "TEST_KEY_FOR_CI_ENVIRONMENT"
         )
         self.gemini_api_key = test_api_key
+        self.mongodb_db_name = "ikkyu_san_test"
 
     def _apply_prod_settings(self):
         """Apply production environment specific settings"""
         # Production-specific overrides
         self.default_temperature = 0.5  # More deterministic in production
+
+
+settings = Settings()

@@ -7,3 +7,6 @@ pydantic
 pydantic_settings
 python-dotenv
 uvicorn
+beanie
+motor
+pymongo

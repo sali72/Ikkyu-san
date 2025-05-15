@@ -6,7 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from openai import AsyncOpenAI
 from app.core.llm.interface import LLMProvider
-from app.core.config import Settings
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +14,9 @@ logger = logging.getLogger(__name__)
 class OpenRouterProvider(LLMProvider):
     """Provider for OpenRouter API"""
     
-    def __init__(self, settings: Optional[Settings] = None):
-        """Initialize OpenRouter provider with settings"""
-        self.settings = settings or Settings()
-        self.api_key = self.settings.openrouter_api_key
+    def __init__(self):
+        """Initialize OpenRouter provider"""
+        self.api_key = settings.openrouter_api_key
         
         # Initialize OpenAI client with OpenRouter base URL
         self.client = AsyncOpenAI(
@@ -38,9 +37,9 @@ class OpenRouterProvider(LLMProvider):
         **kwargs
     ) -> Dict[str, Any]:
         """Generate a completion from OpenRouter"""
-        model_name = model or self.settings.default_model
-        temp_value = temperature or self.settings.default_temperature
-        max_tokens_value = max_tokens or self.settings.max_tokens
+        model_name = model or settings.default_model
+        temp_value = temperature or settings.default_temperature
+        max_tokens_value = max_tokens or settings.max_tokens
         
         logger.info(f"Sending request to OpenRouter API with model: {model_name}")
         

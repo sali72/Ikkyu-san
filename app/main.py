@@ -7,7 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import router as api_router
-from app.api.deps import get_settings
+from app.core.config import settings
+from app.core.db import init_database
 
 # Configure logging
 logging.basicConfig(
@@ -22,7 +23,6 @@ def create_application() -> FastAPI:
     """
     Creates and configures the FastAPI application
     """
-    settings = get_settings()
     logger.info(f"API configured with prefix: {settings.api_prefix}")
     logger.info(f"Using LLM model: {settings.default_model}")
 
@@ -41,8 +41,12 @@ def create_application() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Include routers with prefix from settings
     application.include_router(api_router, prefix=settings.api_prefix)
+    
+    # Register startup event to initialize database
+    @application.on_event("startup")
+    async def startup_db_client():
+        await init_database()
 
     return application
 
