@@ -71,14 +71,16 @@ async def chat(
         user_message = request.messages[-1]
 
         # Save user message to conversation context
-        await conversation_service.add_message(
+        updated_conversation = await conversation_service.add_message(
             request.user_id, conversation.conversation_id, user_message
         )
 
-        # Get context window for LLM
+        # Get context window for LLM - use updated_conversation to ensure latest message is included
         context_messages = conversation_service.get_context_window(
-            conversation.messages, system_prompt
+            updated_conversation.messages, system_prompt
         )
+        logger.info(f"Context messages: {context_messages}")
+        logger.info(f"System prompt: {system_prompt}")
 
         # Generate response from LLM
         response = await llm_service.generate_response(
