@@ -1,13 +1,10 @@
-"""
-Service for managing conversation context
-"""
+"""CRUD operations for conversation data"""
 
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 
-from app.core.config import settings
 from app.schemas.chat import Message
 from app.models import Conversation
 
@@ -46,8 +43,24 @@ async def create_conversation(
     Returns:
         The new conversation document
     """
-    conversation_id = str(uuid.uuid4())
-    conversation = Conversation(
+    conversation_id = _generate_conversation_id()
+    conversation = _create_conversation_object(user_id, conversation_id, title, model)
+    return await conversation.insert()
+
+
+def _generate_conversation_id() -> str:
+    """Generate a unique conversation ID"""
+    return str(uuid.uuid4())
+
+
+def _create_conversation_object(
+    user_id: str, 
+    conversation_id: str, 
+    title: Optional[str] = None, 
+    model: Optional[str] = None
+) -> Conversation:
+    """Create a new conversation object"""
+    return Conversation(
         user_id=user_id,
         conversation_id=conversation_id,
         title=title,
@@ -55,7 +68,6 @@ async def create_conversation(
         messages=[],
         token_count=0,
     )
-    return await conversation.insert()
 
 
 async def add_message(
@@ -73,66 +85,37 @@ async def add_message(
     Returns:
         Updated conversation document
     """
+    # Get the conversation
     conversation = await get_conversation(user_id, conversation_id)
-
+    
     if not conversation:
-        logger.warning(
-            f"Conversation {conversation_id} not found for user {user_id}, creating new one"
-        )
-        conversation = await create_conversation(user_id, model=settings.default_model)
-
+        logger.warning(f"Conversation {conversation_id} not found, creating new one")
+        conversation = await create_conversation(user_id)
+        
     # Add message to conversation
     conversation.messages.append(message)
     conversation.token_count += token_count
     conversation.updated_at = datetime.utcnow()
 
-    # Update title if this is the first user message
-    if (
-        len(conversation.messages) == 1
-        and message.role == "user"
-        and not conversation.title
-    ):
+    # Update title if this is the first user message and no title exists
+    if len(conversation.messages) == 1 and message.role == "user" and not conversation.title:
         # Use the first ~30 chars of the first message as the title
+        max_length = 30
         conversation.title = (
-            (message.content[:30] + "...")
-            if len(message.content) > 30
+            (message.content[:max_length] + "...")
+            if len(message.content) > max_length
             else message.content
         )
-
+    
+    # Save the updated conversation
     await conversation.save()
     return conversation
 
 
-def get_context_window(
-    messages: List[Message], system_prompt: Optional[str] = None
-) -> List[Dict[str, Any]]:
-    """
-    Get the context window for the LLM based on conversation history
 
-    Args:
-        messages: Full message history
-        system_prompt: Optional system prompt to include
 
-    Returns:
-        List of messages formatted for the LLM within token constraints
-    """
-    # Create a new list with system message if provided
-    context = []
-    if system_prompt:
-        context.append({"role": "system", "content": system_prompt})
 
-    # Take the last N messages based on context window size
-    recent_messages = (
-        messages[-settings.context_window_size :]
-        if len(messages) > settings.context_window_size
-        else messages
-    )
 
-    # Add recent messages to context
-    for message in recent_messages:
-        context.append({"role": message.role, "content": message.content})
-
-    return context
 
 
 async def list_conversations(
@@ -149,6 +132,11 @@ async def list_conversations(
     Returns:
         List of conversation documents
     """
+    return await _query_conversations(user_id, limit, skip)
+
+
+async def _query_conversations(user_id: str, limit: int, skip: int) -> List[Conversation]:
+    """Query the database for conversations"""
     return (
         await Conversation.find({"user_id": user_id})
         .sort("-updated_at")

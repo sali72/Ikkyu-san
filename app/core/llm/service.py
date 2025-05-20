@@ -40,46 +40,101 @@ class LLMService:
             Dictionary with the LLM response and usage information
         """
         try:
-            # Prepare the system message if provided
-            processed_messages = []
-            if system_prompt:
-                processed_messages.append({"role": "system", "content": system_prompt})
+            # Process messages and prepare for LLM
+            processed_messages = self._prepare_messages(messages, system_prompt)
 
-            # Add user messages
-            for message in messages:
-                if isinstance(message, dict):
-                    # Message is already a dict, just add it to processed_messages
-                    processed_messages.append(message)
-                else:
-                    # Message is a Message object, convert to dict
-                    processed_messages.append(
-                        {"role": message.role, "content": message.content}
-                    )
-            
-            # Delegate to the provider
-            response = await self.provider.generate_completion(
-                messages=processed_messages,
-                model=model,
-                temperature=temperature,
-                max_tokens=max_tokens,
+            # Get response from provider
+            response = await self._get_provider_response(
+                processed_messages, model, temperature, max_tokens
             )
-            
-            # Ensure response has a "usage" field
-            if "usage" not in response:
-                response["usage"] = None
-            
+
             return response
 
         except Exception as e:
             logger.error(f"Error generating LLM response: {str(e)}")
             logger.exception("Full exception details:")
-            
-            # Return a user-friendly error message instead of raising
-            return {
-                "message": {
-                    "role": "assistant",
-                    "content": "I'm sorry, but there was an error processing your request. Please try again later.",
-                },
-                "usage": None,  # Ensure usage field is always present
-                "error": "service_error",
-            }
+            return self._create_error_response("service_error")
+
+    def _prepare_messages(
+        self,
+        messages: List[Union[Message, Dict[str, str]]],
+        system_prompt: Optional[str] = None,
+    ) -> List[Dict[str, str]]:
+        """
+        Prepare messages for the LLM provider
+
+        Args:
+            messages: List of messages to process
+            system_prompt: Optional system prompt to include
+
+        Returns:
+            List of processed messages in dict format
+        """
+        processed_messages = []
+
+        # Add system prompt if provided
+        if system_prompt:
+            processed_messages.append({"role": "system", "content": system_prompt})
+
+        # Process and add all messages
+        for message in messages:
+            if isinstance(message, dict):
+                processed_messages.append(message)
+            else:
+                processed_messages.append(
+                    {"role": message.role, "content": message.content}
+                )
+
+        return processed_messages
+
+    async def _get_provider_response(
+        self,
+        messages: List[Dict[str, str]],
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """
+        Get response from the LLM provider
+
+        Args:
+            messages: Processed messages to send to the provider
+            model: LLM model to use
+            temperature: Temperature setting
+            max_tokens: Maximum tokens for response
+
+        Returns:
+            Response from the provider with standardized format
+        """
+        # Delegate to the provider
+        response = await self.provider.generate_completion(
+            messages=messages,
+            model=model,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+
+        # Ensure response has a "usage" field
+        if "usage" not in response:
+            response["usage"] = None
+
+        return response
+
+    def _create_error_response(self, error_type: str) -> Dict[str, Any]:
+        """
+        Create a standardized error response
+
+        Args:
+            error_type: Type of error that occurred
+
+        Returns:
+            Error response in standard format
+        """
+        return {
+            "message": {
+                "role": "assistant",
+                "content": "I'm sorry, but there was an error processing your request. Please try again later.",
+            },
+            "usage": None,
+            "error": error_type,
+        }
