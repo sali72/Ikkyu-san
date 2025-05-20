@@ -25,6 +25,7 @@ class TestChatEndpointE2E:
                     }
                 ],
                 "max_tokens": 50,
+                "user_id": "test-user-123",
             },
         )
 
@@ -50,6 +51,7 @@ class TestChatEndpointE2E:
                 "messages": [{"role": "user", "content": "Tell me a very short joke."}],
                 "max_tokens": 100,
                 "system_prompt": "You are a comedian AI that tells jokes.",
+                "user_id": "test-user-123",
             },
         )
 
