@@ -68,9 +68,17 @@ class Settings(BaseSettings):
         default="mongodb://localhost:27017", 
         description="MongoDB connection URI"
     )
+    mongodb_docker_host: str = Field(
+        default="mongodb",
+        description="MongoDB Docker container"
+    )
     mongodb_db_name: str = Field(
         default="ikkyu_san_chatbot", 
         description="MongoDB database name"
+    )
+    db_mode: str = Field(
+        default="local", 
+        description="MongoDB database mode (local, container)"
     )
 
     # API configuration

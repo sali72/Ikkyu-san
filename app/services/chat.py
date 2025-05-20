@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 async def process_chat_request(
-    request: ChatRequest, llm_service: LLMService
+    request: ChatRequest,
+    llm_service: LLMService,
 ) -> Dict[str, Any]:
     """
     Process a chat request and generate a response
@@ -51,7 +52,10 @@ async def process_chat_request(
     }
 
 
-async def process_user_message(request: ChatRequest, conversation):
+async def process_user_message(
+    request: ChatRequest,
+    conversation,
+):
     """
     Process and save a user message
 
@@ -105,7 +109,11 @@ async def generate_llm_response(
     )
 
 
-async def save_assistant_response(request: ChatRequest, response, conversation_id: str):
+async def save_assistant_response(
+    request: ChatRequest,
+    response,
+    conversation_id: str,
+):
     """
     Save the assistant's response to the conversation
 

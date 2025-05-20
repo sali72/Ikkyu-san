@@ -12,7 +12,10 @@ from app.schemas.chat import Message
 logger = logging.getLogger(__name__)
 
 
-async def get_conversation(user_id: str, conversation_id: str):
+async def get_conversation(
+    user_id: str,
+    conversation_id: str,
+):
     """
     Get a conversation by ID
 
@@ -27,7 +30,9 @@ async def get_conversation(user_id: str, conversation_id: str):
 
 
 async def create_conversation(
-    user_id: str, title: Optional[str] = None, model: Optional[str] = None
+    user_id: str,
+    title: Optional[str] = None,
+    model: Optional[str] = None,
 ):
     """
     Create a new conversation
@@ -44,7 +49,9 @@ async def create_conversation(
 
 
 async def get_or_create_conversation(
-    user_id: str, conversation_id: str, model: Optional[str] = None
+    user_id: str,
+    conversation_id: str,
+    model: Optional[str] = None,
 ):
     """
     Get an existing conversation or create a new one if it doesn't exist
@@ -69,7 +76,10 @@ async def get_or_create_conversation(
 
 
 async def add_message(
-    user_id: str, conversation_id: str, message: Message, token_count: int = 0
+    user_id: str,
+    conversation_id: str,
+    message: Message,
+    token_count: int = 0,
 ):
     """
     Add a message to a conversation
@@ -93,7 +103,11 @@ async def add_message(
     )
 
 
-async def list_conversations(user_id: str, limit: int = 10, skip: int = 0):
+async def list_conversations(
+    user_id: str,
+    limit: int = 10,
+    skip: int = 0,
+):
     """
     List conversations for a user
 
@@ -108,7 +122,10 @@ async def list_conversations(user_id: str, limit: int = 10, skip: int = 0):
     return await conversation_crud.list_conversations(user_id, limit, skip)
 
 
-async def delete_conversation(user_id: str, conversation_id: str):
+async def delete_conversation(
+    user_id: str,
+    conversation_id: str,
+):
     """
     Delete a conversation
 

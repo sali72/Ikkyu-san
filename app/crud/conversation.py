@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
+from app.core.db import get_current_session
 from app.schemas.chat import Message
 from app.models import Conversation
 
@@ -12,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 async def get_conversation(
-    user_id: str, conversation_id: str
+    user_id: str,
+    conversation_id: str,
 ) -> Optional[Conversation]:
     """
     Retrieve a conversation by user_id and conversation_id
@@ -24,13 +26,16 @@ async def get_conversation(
     Returns:
         The conversation document or None if not found
     """
+    session = get_current_session()
     return await Conversation.find_one(
-        {"user_id": user_id, "conversation_id": conversation_id}
+        {"user_id": user_id, "conversation_id": conversation_id}, session=session
     )
 
 
 async def create_conversation(
-    user_id: str, title: Optional[str] = None, model: Optional[str] = None
+    user_id: str,
+    title: Optional[str] = None,
+    model: Optional[str] = None,
 ) -> Conversation:
     """
     Create a new conversation
@@ -45,7 +50,8 @@ async def create_conversation(
     """
     conversation_id = _generate_conversation_id()
     conversation = _create_conversation_object(user_id, conversation_id, title, model)
-    return await conversation.insert()
+    session = get_current_session()
+    return await conversation.insert(session=session)
 
 
 def _generate_conversation_id() -> str:
@@ -54,10 +60,10 @@ def _generate_conversation_id() -> str:
 
 
 def _create_conversation_object(
-    user_id: str, 
-    conversation_id: str, 
-    title: Optional[str] = None, 
-    model: Optional[str] = None
+    user_id: str,
+    conversation_id: str,
+    title: Optional[str] = None,
+    model: Optional[str] = None,
 ) -> Conversation:
     """Create a new conversation object"""
     return Conversation(
@@ -71,7 +77,10 @@ def _create_conversation_object(
 
 
 async def add_message(
-    user_id: str, conversation_id: str, message: Message, token_count: int = 0
+    user_id: str,
+    conversation_id: str,
+    message: Message,
+    token_count: int = 0,
 ) -> Conversation:
     """
     Add a message to a conversation
@@ -87,18 +96,22 @@ async def add_message(
     """
     # Get the conversation
     conversation = await get_conversation(user_id, conversation_id)
-    
+
     if not conversation:
         logger.warning(f"Conversation {conversation_id} not found, creating new one")
         conversation = await create_conversation(user_id)
-        
+
     # Add message to conversation
     conversation.messages.append(message)
     conversation.token_count += token_count
     conversation.updated_at = datetime.utcnow()
 
     # Update title if this is the first user message and no title exists
-    if len(conversation.messages) == 1 and message.role == "user" and not conversation.title:
+    if (
+        len(conversation.messages) == 1
+        and message.role == "user"
+        and not conversation.title
+    ):
         # Use the first ~30 chars of the first message as the title
         max_length = 30
         conversation.title = (
@@ -106,20 +119,17 @@ async def add_message(
             if len(message.content) > max_length
             else message.content
         )
-    
+
     # Save the updated conversation
-    await conversation.save()
+    session = get_current_session()
+    await conversation.save(session=session)
     return conversation
 
 
-
-
-
-
-
-
 async def list_conversations(
-    user_id: str, limit: int = 10, skip: int = 0
+    user_id: str,
+    limit: int = 10,
+    skip: int = 0,
 ) -> List[Conversation]:
     """
     List conversations for a user
@@ -135,10 +145,15 @@ async def list_conversations(
     return await _query_conversations(user_id, limit, skip)
 
 
-async def _query_conversations(user_id: str, limit: int, skip: int) -> List[Conversation]:
+async def _query_conversations(
+    user_id: str,
+    limit: int,
+    skip: int,
+) -> List[Conversation]:
     """Query the database for conversations"""
+    session = get_current_session()
     return (
-        await Conversation.find({"user_id": user_id})
+        await Conversation.find({"user_id": user_id}, session=session)
         .sort("-updated_at")
         .limit(limit)
         .skip(skip)
@@ -146,7 +161,10 @@ async def _query_conversations(user_id: str, limit: int, skip: int) -> List[Conv
     )
 
 
-async def delete_conversation(user_id: str, conversation_id: str) -> bool:
+async def delete_conversation(
+    user_id: str,
+    conversation_id: str,
+) -> bool:
     """
     Delete a conversation
 
@@ -161,5 +179,6 @@ async def delete_conversation(user_id: str, conversation_id: str) -> bool:
     if not conversation:
         return False
 
-    await conversation.delete()
+    session = get_current_session()
+    await conversation.delete(session=session)
     return True

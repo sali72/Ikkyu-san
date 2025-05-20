@@ -9,6 +9,7 @@ from app.core.llm.service import LLMService
 from app.api.deps import get_llm_service
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services import chat as chat_service
+from app.api.deps import get_db
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
     summary="Chat with the AI assistant",
     description="Send messages to the AI assistant and get a response",
+    dependencies=[Depends(get_db)],
 )
 async def chat(
     request: ChatRequest,
@@ -40,6 +42,7 @@ async def chat(
     """
     try:
         # Delegate processing to the service layer
+        # Session is already available via context variable
         response_data = await chat_service.process_chat_request(request, llm_service)
 
         # Convert to response model

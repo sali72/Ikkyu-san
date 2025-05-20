@@ -3,7 +3,8 @@ Conversation management API routes
 """
 
 import logging
-from fastapi import APIRouter, HTTPException, status, Query, Path
+from fastapi import APIRouter, HTTPException, status, Query, Path, Depends
+from app.api.deps import get_db
 
 from app.schemas.chat import ConversationList, ConversationInfo
 from app.services import conversation as conversation_service
@@ -21,6 +22,7 @@ router = APIRouter()
     status_code=status.HTTP_200_OK,
     summary="List user conversations",
     description="Get a list of conversations for the user",
+    dependencies=[Depends(get_db)],
 )
 async def list_conversations(
     user_id: str,
@@ -39,6 +41,7 @@ async def list_conversations(
         List of conversation information
     """
     try:
+        # Session is already available via context variable
         conversations = await conversation_service.list_conversations(
             user_id, limit, skip
         )
@@ -74,6 +77,7 @@ async def list_conversations(
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a conversation",
     description="Delete a conversation by ID",
+    dependencies=[Depends(get_db)],
 )
 async def delete_conversation(
     conversation_id: str = Path(
@@ -88,6 +92,7 @@ async def delete_conversation(
         conversation_id: Unique identifier for the conversation
         user_id: Unique identifier for the user
     """
+    # Session is already available via context variable
     success = await conversation_service.delete_conversation(user_id, conversation_id)
     if not success:
         raise HTTPException(
@@ -101,6 +106,7 @@ async def delete_conversation(
     status_code=status.HTTP_200_OK,
     summary="Get conversation messages",
     description="Get all messages in a conversation",
+    dependencies=[Depends(get_db)],
 )
 async def get_conversation_messages(
     conversation_id: str = Path(
@@ -118,6 +124,7 @@ async def get_conversation_messages(
     Returns:
         List of messages in the conversation
     """
+    # Session is already available via context variable
     conversation = await conversation_service.get_conversation(user_id, conversation_id)
     if not conversation:
         raise HTTPException(
